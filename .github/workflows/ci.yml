@@ -16,12 +16,18 @@ jobs:
 
     - name: Install PHP Dependencies
       run: composer install --prefer-dist --no-progress
+    
+    - name: Fix PHPUnit Permission
+      run: chmod +x vendor/bin/phpunit
 
     - name: Start PHP Server in Background
       run: php -S localhost:8000 &
 
     - name: Start ChromeDriver in Background
       run: chromedriver --port=9515 --url-base=wd/hub &
+
+    - name: Run Tests
+      run: ./vendor/bin/phpunit tests/ --coverage-text
 
     - name: Run All Automated Tests & Quality Metrics
       # Mengeksekusi seluruh pengujian di dalam folder tests/ (termasuk SystemTest.php)
