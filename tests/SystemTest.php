@@ -16,13 +16,15 @@ class SystemTest extends TestCase{
         $chromeOptions = new ChromeOptions();
         // Mode Headless sangat krusial agar tidak error saat berjalan di GitHub Actions
         $chromeOptions->addArguments(['--headless', '--disable-gpu', '--no-sandbox']);
-        $chromeOptions->setBinary(
-        'D:\\Tugas Kuliah\\Semester 6\\Penjaminan Perangkat Lunak\\Minggu 12\\chrome-win64\\chrome-win64\\chrome.exe');
+        //$chromeOptions->setBinary(
+        //'D:\\Tugas Kuliah\\Semester 6\\Penjaminan Perangkat Lunak\\Minggu 12\\chrome-win64\\chrome-win64\\chrome.exe');
+        $chromeOptions->setBinary('/usr/bin/google-chrome');
 
         $capabilities = DesiredCapabilities::chrome();
         $capabilities->setCapability(ChromeOptions::CAPABILITY, $chromeOptions);
 
         $this->driver = RemoteWebDriver::create($host, $capabilities);
+        
     }
 
     public function testHomepageAndSearchFeature(){

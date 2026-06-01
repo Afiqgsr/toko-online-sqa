@@ -14,6 +14,11 @@ jobs:
         php-version: '8.2'
         coverage: xdebug # Diperlukan untuk Metrik Coverage
 
+    - name: Install Google Chrome
+      run: |
+        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        sudo apt install -y ./google-chrome-stable_current_amd64.deb
+
     - name: Install PHP Dependencies
       run: composer install --prefer-dist --no-progress
     
@@ -24,7 +29,7 @@ jobs:
       run: php -S localhost:8000 &
 
     - name: Start ChromeDriver in Background
-      run: chromedriver --port=9515 --url-base=wd/hub &
+      run: chromedriver --port=9515 &
 
     - name: Run Tests
       run: ./vendor/bin/phpunit tests/ --coverage-text
