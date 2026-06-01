@@ -1,54 +1,89 @@
 <?php
+
 use PHPUnit\Framework\TestCase;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\WebDriverBy;
+use Facebook\WebDriver\WebDriverExpectedCondition;
 
-class SystemTest extends TestCase{
+class SystemTest extends TestCase
+{
     private $driver;
     private $baseUrl = 'http://localhost:8000';
 
-    protected function setUp(): void{
-        // Mengarahkan ke server ChromeDriver lokal / GitHub Actions
+    protected function setUp(): void
+    {
         $host = 'http://localhost:9515';
 
         $chromeOptions = new ChromeOptions();
-        // Mode Headless sangat krusial agar tidak error saat berjalan di GitHub Actions
-        $chromeOptions->addArguments(['--headless', '--disable-gpu', '--no-sandbox']);
-        //$chromeOptions->setBinary(
-        //'D:\\Tugas Kuliah\\Semester 6\\Penjaminan Perangkat Lunak\\Minggu 12\\chrome-win64\\chrome-win64\\chrome.exe');
+
+        // CI-safe arguments
+        $chromeOptions->addArguments([
+            '--headless=new',
+            '--disable-gpu',
+            '--no-sandbox',
+            '--disable-dev-shm-usage'
+        ]);
+
+        // IMPORTANT for GitHub Actions Chrome
         $chromeOptions->setBinary('/usr/bin/google-chrome');
 
         $capabilities = DesiredCapabilities::chrome();
         $capabilities->setCapability(ChromeOptions::CAPABILITY, $chromeOptions);
 
         $this->driver = RemoteWebDriver::create($host, $capabilities);
-        
     }
 
-    public function testHomepageAndSearchFeature(){
-        // Kunjungi server lokal
+    public function testHomepageAndSearchFeature()
+    {
+        // Buka aplikasi
         $this->driver->get($this->baseUrl);
 
-        // Validasi antarmuka memuat teks judul
-        $bodyText = $this->driver->findElement(WebDriverBy::tagName('body'))->getText();
+        // WAIT: halaman siap
+        $this->driver->wait(10)->until(
+            WebDriverExpectedCondition::presenceOfElementLocated(
+                WebDriverBy::tagName('body')
+            )
+        );
+
+        // Validasi homepage
+        $bodyText = $this->driver
+            ->findElement(WebDriverBy::tagName('body'))
+            ->getText();
+
         $this->assertStringContainsString('Toko Online', $bodyText);
 
-        // Simulasi pengguna mencari barang
-        $searchBox = $this->driver->findElement(WebDriverBy::name('cari'));
-        $searchBox->sendKeys('Kemeja');
-        $searchBox->submit(); // Tekan enter
+        // WAIT: search box ready
+        $searchBox = $this->driver->wait(10)->until(
+            WebDriverExpectedCondition::elementToBeClickable(
+                WebDriverBy::name('cari')
+            )
+        );
 
-        // Validasi hasil pencarian
-        $updatedBodyText = $this->driver->findElement(WebDriverBy::tagName('body'))->getText();
+        // aksi search
+        $searchBox->sendKeys('Kemeja');
+        $searchBox->submit();
+
+        // WAIT: hasil pencarian muncul
+        $this->driver->wait(10)->until(
+            WebDriverExpectedCondition::textToBePresentInElement(
+                WebDriverBy::tagName('body'),
+                'Kemeja Flanel'
+            )
+        );
+
+        $updatedBodyText = $this->driver
+            ->findElement(WebDriverBy::tagName('body'))
+            ->getText();
+
         $this->assertStringContainsString('Kemeja Flanel', $updatedBodyText);
     }
 
-    protected function tearDown(): void{
+    protected function tearDown(): void
+    {
         if ($this->driver) {
-            $this->driver->quit(); // Tutup browser
+            $this->driver->quit();
         }
     }
-
 }
